@@ -6,6 +6,8 @@ This repository contains introductory materials for learning Julia and JuMP.
 
 This README will walk you through how to install Julia and IJulia.
 
+**If you have trouble installing, please [open a Github issue](https://github.com/odow/jump-training-materials/issues/new).**
+
 ## Install Julia
 
 To get started, you first need to install Julia.
