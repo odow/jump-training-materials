@@ -94,8 +94,18 @@ If all goes well, a browser window will open that looks like this:
 ![jupyer_notebook](assets/jupyter.png)
 
 To get started on the content portion of the tutorials, click on the first
-notebook entitled `Class I - An introduction to Julia`.
+notebook entitled `an_introduction_to_julia.ipynb`. Then click
+"Cell > "Run All".
+
+![jupyer_notebook](assets/jupyter_2.png)
+
+If things are sucessful, all of the cells should run (some will error on
+purpose). You're now ready to follow along with the live training.
+
+**If things don't work, please [open a Github issue](https://github.com/odow/jump-training-materials/issues/new)
+with a screenshot of what went wrong.**
 
 ### Common problems
 
- - Don't start Jupyter via Anaconda! The version that ships with different.
+ - Don't start Jupyter via Anaconda! There are some version differences that
+   cause problems.
