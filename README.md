@@ -109,3 +109,18 @@ with a screenshot of what went wrong.**
 
  - Don't start Jupyter via Anaconda! There are some version differences that
    cause problems.
+
+## Updating the materials
+
+I will continue to update these materials over time. To update the materials you
+previous installed:
+
+**If you have `git` installed**
+
+`git pull` the latest changes. All of the packages will remain installed, so the
+only thing that will change are the Jupyter notebooks.
+
+**If you don't have `git` installed**
+
+Download a new copy of the zip file, and then copy-paste the new notebooks into
+the old directory. There is no need to re-run the other installation steps.
