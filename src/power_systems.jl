@@ -6,19 +6,12 @@
 # # Power Systems
 
 # This tutorial demonstrates how to formulate basic power systems engineering
-# models in JuMP using a 3 bus example.
+# models in JuMP.
 
 # We will consider basic "economic dispatch" and "unit commitment" models
 # without taking into account transmission constraints.
 
 # ## Illustrative example
-
-# In the following notes for the sake of simplicity, we are going to use a three
-# bus example mirroring the interface between Western and Eastern Texas. This
-# example is taken from R. Baldick, "[Wind and Energy Markets: A Case Study of Texas](http://dx.doi.org/10.1109/JSYST.2011.2162798),"
-# IEEE Systems Journal, vol. 6, pp. 27-34, 2012.
-
-# ![Power Systems](assets/power_systems.png)
 
 # For this example, we set the following characteristics of generators,
 # transmission lines, wind farms and demands:
@@ -82,52 +75,79 @@
 using JuMP
 import DataFrames
 import GLPK
+using Plots
+using StatsPlots
 
 # Define some input data about the test system.
 
-## Maximum power output of generators
-g_max = [1000, 1000]
-## Minimum power output of generators
-g_min = [0, 300]
-## Incremental cost of generators
-c_g = [50, 100]
-## Fixed cost of generators
-c_g0 = [1000, 0]
-## Incremental cost of wind generators
-c_w = 50
-## Total demand
-d = 1500
-## Wind forecast
-w_f = 200
+# We define some thermal generators:
+struct ThermalGenerator
+    min::Float64
+    max::Float64
+    fixed_cost::Float64
+    variable_cost::Float64
+end
+
+generators = [
+    ThermalGenerator(0.0, 1000.0, 1000.0, 50.0),
+    ThermalGenerator(300.0, 1000.0, 0.0, 100.0),
+]
+
+# A wind generator
+
+struct WindGenerator
+    variable_cost::Float64
+end
+
+wind_generator = WindGenerator(50.0)
+
+# An a scenario
+struct Scenario
+    demand::Float64
+    wind::Float64
+end
+
+scenario = Scenario(1500.0, 200.0)
 
 # Create a function solve_ed, which solves the economic dispatch problem for a
 # given set of input parameters.
-function solve_ed(g_max, g_min, c_g, c_w, d, w_f)
+
+function solve_ed(
+    generators::Vector{ThermalGenerator},
+    wind::WindGenerator,
+    scenario::Scenario,
+)
     ## Define the economic dispatch (ED) model
     ed = Model(GLPK.Optimizer)
     ## Define decision variables
     ## power output of generators
-    @variable(ed, g_min[i] <= g[i = 1:2] <= g_max[i])
+    N = length(generators)
+    @variable(ed, generators[i].min <= g[i = 1:N] <= generators[i].max)
     ## wind power injection
-    @variable(ed, 0 <= w <= w_f)
+    @variable(ed, 0 <= w <= scenario.wind)
     ## Define the objective function
-    @objective(ed, Min, c_g' * g + c_w * w)
+    @objective(
+        ed,
+        Min,
+        sum(generators[i].variable_cost * g[i] for i in 1:N) +
+        wind.variable_cost * w,
+    )
     ## Define the power balance constraint
-    @constraint(ed, sum(g) + w == d)
+    @constraint(ed, sum(g[i] for i in 1:N) + w == scenario.demand)
     ## Solve statement
     optimize!(ed)
     ## return the optimal value of the objective function and its minimizers
     return (
         g = value.(g),
         w = value(w),
-        wind_spill = w_f - value(w),
+        wind_spill = scenario.wind - value(w),
         total_cost = objective_value(ed),
     )
 end
 
 # Solve the economic dispatch problem
 
-solution = solve_ed(g_max, g_min, c_g, c_w, d, w_f);
+solution = solve_ed(generators, wind_generator, scenario);
 
 println("Dispatch of Generators: ", solution.g, " MW")
 println("Dispatch of Wind: ", solution.w, " MW")
@@ -140,8 +160,19 @@ println("Total cost: \$", solution.total_cost)
 # In the following exercise we adjust the incremental cost of generator G1 and
 # observe its impact on the total cost.
 
+function scale_generator_cost(g::ThermalGenerator, scale)
+    return ThermalGenerator(
+        g.min,
+        g.max,
+        g.fixed_cost,
+        scale * g.variable_cost,
+    )
+end
+
 start = time()
 c_g_scale_df = DataFrames.DataFrame(
+    ## Scale factor
+    scale = Float64[],
     ## Dispatch of Generator 1 [MW]
     dispatch_G1 = Float64[],
     ## Dispatch of Generator 2 [MW]
@@ -155,15 +186,15 @@ c_g_scale_df = DataFrames.DataFrame(
 )
 for c_g1_scale in 0.5:0.1:3.0
     ## Update the incremental cost of the first generator at every iteration.
-    c_g_scale = [c_g[1] * c_g1_scale, c_g[2]]
+    new_generators = scale_generator_cost.(generators, [c_g1_scale, 1.0])
     ## Solve the ed problem with the updated incremental cost
-    sol = solve_ed(g_max, g_min, c_g_scale, c_w, d, w_f)
+    sol = solve_ed(new_generators, wind_generator, scenario)
     push!(
         c_g_scale_df,
-        (sol.g[1], sol.g[2], sol.w, sol.wind_spill, sol.total_cost),
+        (c_g1_scale, sol.g[1], sol.g[2], sol.w, sol.wind_spill, sol.total_cost),
     )
 end
-print(string("elapsed time: ", elapsed, " seconds"))
+print(string("elapsed time: ", time() - start, " seconds"))
 
 #-
 
@@ -179,25 +210,37 @@ c_g_scale_df
 
 # Compare the computing time in case of the above and below models.
 
-function solve_ed_inplace(c_w_scale)
+function solve_ed_inplace(
+    generators::Vector{ThermalGenerator},
+    wind::WindGenerator,
+    scenario::Scenario,
+    scale::AbstractVector{Float64},
+)
     start = time()
     obj_out = Float64[]
     w_out = Float64[]
     g1_out = Float64[]
     g2_out = Float64[]
+    ## This function only works for two generators
+    @assert length(generators) == 2
     ed = Model(GLPK.Optimizer)
-    @variables(ed, begin
-        g_min[i] <= g[i = 1:2] <= g_max[i]
-        0 <= w <= w_f
-    end)
-    @objective(ed, Min, c_g' * g + c_w * w)
-    @constraint(ed, sum(g) + w == d)
-    optimize!(ed)
-    for c_g1_scale in 0.5:0.01:3.0
+    N = length(generators)
+    @variable(ed, generators[i].min <= g[i = 1:N] <= generators[i].max)
+    @variable(ed, 0 <= w <= scenario.wind)
+    @objective(
+        ed,
+        Min,
+        sum(generators[i].variable_cost * g[i] for i in 1:N) +
+        wind.variable_cost * w,
+    )
+    @constraint(ed, sum(g[i] for i in 1:N) + w == scenario.demand)
+    for c_g1_scale in scale
         @objective(
             ed,
             Min,
-            c_g1_scale * c_g[1] * g[1] + c_g[2] * g[2] + c_w_scale * c_w * w,
+            c_g1_scale * generators[1].variable_cost * g[1] +
+            generators[2].variable_cost * g[2] +
+            wind.variable_cost * w,
         )
         optimize!(ed)
         push!(obj_out, objective_value(ed))
@@ -206,10 +249,11 @@ function solve_ed_inplace(c_w_scale)
         push!(g2_out, value(g[2]))
     end
     df = DataFrames.DataFrame(
+        scale = scale,
         dispatch_G1 = g1_out,
         dispatch_G2 = g2_out,
         dispatch_wind = w_out,
-        spillage_wind = w_f .- w_out,
+        spillage_wind = scenario.wind .- w_out,
         total_cost = obj_out,
     )
     elapsed = time() - start
@@ -217,7 +261,7 @@ function solve_ed_inplace(c_w_scale)
     return df
 end
 
-solve_ed_inplace(2.0);
+solve_ed_inplace(generators, wind_generator, scenario, 0.5:0.1:3.0)
 
 # Adjusting specific constraints and/or the objective function is faster than
 # re-building the entire model.
@@ -245,12 +289,23 @@ demand_scale_df = DataFrames.DataFrame(
     total_cost = Float64[],
 )
 
+"""
+    Base.:(*)(scale::Float64, scenario::Scenario)
+
+Julia lets you overload any method. Here we add a method to `*` so we can scale
+the demand of a scenario.
+"""
+function Base.:(*)(scale::Float64, scenario::Scenario)
+    return Scenario(scale * scenario.demand, scenario.wind)
+end
+
 for demand_scale in 0.2:0.1:1.5
-    sol = solve_ed(g_max, g_min, c_g, c_w, demand_scale * d, w_f)
+    new_scenario = demand_scale * scenario
+    sol = solve_ed(generators, wind_generator, new_scenario)
     push!(
         demand_scale_df,
         (
-            demand_scale * d,
+            new_scenario.demand,
             sol.g[1],
             sol.g[2],
             sol.w,
@@ -264,7 +319,7 @@ demand_scale_df
 
 #-
 
-dispatch = @df(
+dispatch_plot = @df(
     demand_scale_df,
     Plots.plot(
         :demand,
@@ -278,7 +333,7 @@ dispatch = @df(
     ),
 )
 
-wind = @df(
+wind_plot = @df(
     demand_scale_df,
     Plots.plot(
         :demand,
@@ -292,7 +347,7 @@ wind = @df(
     ),
 )
 
-Plots.plot(dispatch, wind)
+Plots.plot(dispatch_plot, wind_plot)
 
 # This particular drawback can be overcome by introducing binary decisions on
 # the "on/off" status of generators. This model is called unit commitment and
@@ -353,16 +408,28 @@ Plots.plot(dispatch, wind)
 # In the following example we convert the ED model explained above to the UC
 # model.
 
-function solve_uc(g_max, g_min, c_g, c_w, d, w_f)
+function solve_uc(
+    generators::Vector{ThermalGenerator},
+    wind::WindGenerator,
+    scenario::Scenario,
+)
     uc = Model(GLPK.Optimizer)
-    @variable(uc, g_min[i] <= g[i = 1:2] <= g_max[i])
-    @variable(uc, 0 <= w <= w_f)
-    @objective(uc, Min, c_g' * g + c_w * w)
-    @constraint(uc, sum(g) + w == d)
+    N = length(generators)
+    @variable(uc, generators[i].min <= g[i = 1:N] <= generators[i].max)
+    @variable(uc, 0 <= w <= scenario.wind)
+    @constraint(uc, sum(g[i] for i in 1:N) + w == scenario.demand)
     ## !!! New: add binary on-off variables for each generator
-    @variable(uc, u[i = 1:2], Bin)
-    @constraint(uc, [i = 1:2], g[i] <= g_max[i] * u[i])
-    @constraint(uc, [i = 1:2], g[i] >= g_min[i] * u[i])
+    @variable(uc, u[i = 1:N], Bin)
+    @constraint(uc, [i = 1:N], g[i] <= generators[i].max * u[i])
+    @constraint(uc, [i = 1:N], g[i] >= generators[i].min * u[i])
+    @objective(
+        uc,
+        Min,
+        sum(generators[i].variable_cost * g[i] for i in 1:N) +
+        wind.variable_cost * w +
+        ## !!! new
+        sum(generators[i].fixed_cost * u[i] for i in 1:N)
+    )
     optimize!(uc)
     status = termination_status(uc)
     if status != MOI.OPTIMAL
@@ -372,14 +439,14 @@ function solve_uc(g_max, g_min, c_g, c_w, d, w_f)
         status = status,
         g = value.(g),
         w = value(w),
-        wind_spill = w_f - value(w),
+        wind_spill = scenario.wind - value(w),
         u = value.(u),
         total_cost = objective_value(uc),
     )
 end
 
 # Solve the economic dispatch problem
-solution = solve_uc(g_max, g_min, c_g, c_w, d, w_f)
+solution = solve_uc(generators, wind_generator, scenario)
 
 println("Dispatch of Generators: ", solution.g, " MW")
 println("Commitments of Generators: ", solution.u)
@@ -405,12 +472,13 @@ uc_df = DataFrames.DataFrame(
 )
 
 for demand_scale in 0.2:0.1:1.5
-    sol = solve_uc(g_max, g_min, c_g, c_w, demand_scale * d, w_f)
+    new_scenario = demand_scale * scenario
+    sol = solve_uc(generators, wind_generator, new_scenario)
     if sol.status == MOI.OPTIMAL
         push!(
             uc_df,
             (
-                demand_scale * d,
+                new_scenario.demand,
                 sol.u[1],
                 sol.u[2],
                 sol.g[1],
@@ -431,7 +499,7 @@ uc_df
 
 #-
 
-commitment = @df(
+commitment_plot = @df(
     uc_df,
     Plots.plot(
         :demand,
@@ -445,12 +513,12 @@ commitment = @df(
     ),
 )
 
-dispatch = @df(
+dispatch_plot = @df(
     uc_df,
     Plots.plot(
         :demand,
-        [:dispatch_G1, :dispatch_G2],
-        labels = ["G1" "G2"],
+        [:dispatch_G1, :dispatch_G2, :wind],
+        labels = ["G1" "G2" "Wind"],
         title = "Dispatch [MW]",
         legend = :bottomright,
         linewidth = 3,
@@ -459,4 +527,4 @@ dispatch = @df(
     ),
 )
 
-Plots.plot(commitment, dispatch)
+Plots.plot(commitment_plot, dispatch_plot)
