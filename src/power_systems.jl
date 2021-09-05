@@ -488,9 +488,8 @@ for demand_scale in 0.2:0.1:1.5
                 sol.total_cost,
             ),
         )
-    else
-        println("Status: $(sol.status) for demand_scale = $(demand_scale)")
     end
+    println("Status: $(sol.status) for demand_scale = $(demand_scale)")
 end
 
 #-
