@@ -5,8 +5,6 @@
 
 # # Power Systems
 
-# **Originally Contributed by**: Yury Dvorkin and Miles Lubin
-
 # This tutorial demonstrates how to formulate basic power systems engineering
 # models in JuMP using a 3 bus example.
 

@@ -18,19 +18,21 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #src
 # SOFTWARE.                                                                      #src
 
-# # Working with Data Files
-
-# **Originally Contributed by**: Arpit Bhatia
+# # Getting started with data and plotting
 
 # In many cases we might need to read data available in an external file rather
 # than type it into Julia ourselves.
 
 # This tutorial is concerned with reading tabular data into Julia and using it
-# for a JuMP model.
+# for a JuMP model. We'll cover basic plotting along the way.
 
-# We'll be reading data using the [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl)
-# package and some other packages specific to file types.
+# ## Where to get help
 
+# * Plots.jl documentation: http://docs.juliaplots.org/latest/
+# * CSV.jl documentation: http://csv.juliadata.org/stable
+# * DataFrames.jl documentation: https://dataframes.juliadata.org/stable/
+
+## We need this constant to point to where the data file are.
 const DATA_DIR = joinpath(@__DIR__, "data");
 
 # !!! note
@@ -48,6 +50,17 @@ const DATA_DIR = joinpath(@__DIR__, "data");
 # ```
 
 import DataFrames
+
+# ### Plots.jl
+
+# The `Plots` package provides a set of tools for plotting. It is available
+# through the Julia package system.
+# ```julia
+# using Pkg
+# Pkg.add("Plotting")
+# ```
+
+import Plots
 
 # ### What is a DataFrame?
 
@@ -73,6 +86,67 @@ import CSV
 # To read a CSV file into a DataFrame, we use the `CSV.read` function.
 
 csv_df = CSV.read(joinpath(DATA_DIR, "StarWars.csv"), DataFrames.DataFrame)
+
+# Let's try plotting some of this data
+
+Plots.scatter(
+    csv_df.Weight,
+    csv_df.Height,
+    xlabel = "Weight",
+    ylabel = "Height",
+)
+
+# That doesn't look right. What happened? If you look at the dataframe above, it
+# read `Weight` in as a `String` column because there are "NA" fields. Let's
+# correct that, by telling CSV to consider "NA" as `missing`.
+
+csv_df = CSV.read(
+    joinpath(DATA_DIR, "StarWars.csv"),
+    DataFrames.DataFrame,
+    missingstring="NA",
+)
+
+# Then let's re-plot our data
+
+Plots.scatter(
+    csv_df.Weight,
+    csv_df.Height,
+    title = "Height vs Weight of StarWars characters",
+    xlabel = "Weight",
+    ylabel = "Height",
+    label = false,
+    ylims = (0, 3),
+)
+
+# Better! Read the [CSV documentation](https://csv.juliadata.org/stable/) for
+# other parsing options.
+
+# DataFrames.jl supports manipulation using functions similar to pandas. For
+# example, split the dataframe into groups based on eye-color:
+
+by_eyecolor = DataFrames.groupby(csv_df, :Eyecolor)
+
+# Then recombine into a single dataframe based on a function operating over the
+# split dataframes:
+
+eyecolor_count = DataFrames.combine(by_eyecolor) do df
+    return DataFrames.nrow(df)
+end
+
+# We can rename columns:
+
+DataFrames.rename!(eyecolor_count, :x1 => :count)
+
+# Then we can visualize the data:
+
+sort!(eyecolor_count, :count, rev = true)
+Plots.bar(
+    eyecolor_count.Eyecolor,
+    eyecolor_count.count,
+    xlabel = "Eyecolor",
+    ylabel = "Number of characters",
+    label = false,
+)
 
 # ### Other Delimited Files
 

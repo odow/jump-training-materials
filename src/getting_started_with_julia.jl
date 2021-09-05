@@ -25,6 +25,15 @@
 # crash course in the basics of Julia. You can find resources that provide
 # a more comprehensive introduction to Julia [here](https://julialang.org/learning/).
 
+# ## Where to get help
+
+#  * Read the documentation
+#    * JuMP https://jump.dev/JuMP.jl/stable/
+#    * Julia https://docs.julialang.org/en/v1/
+#  * Ask (or browse) the Julia community forum: https://discourse.julialang.org
+#    * If the question is JuMP-related, ask in the [Optimization (Mathematical)](https://discourse.julialang.org/c/domain/opt/13)
+#      section, or tag your question with "jump"
+
 # ## Installing Julia
 
 # To install Julia, [download the latest stable release](https://julialang.org/downloads/),

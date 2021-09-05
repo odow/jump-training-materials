@@ -94,7 +94,7 @@ If all goes well, a browser window will open that looks like this:
 ![jupyer_notebook](assets/jupyter.png)
 
 To get started on the content portion of the tutorials, click on the first
-notebook entitled `an_introduction_to_julia.ipynb`. Then click
+notebook entitled `getting_started_with_julia.ipynb`. Then click
 "Cell > "Run All".
 
 ![jupyer_notebook](assets/jupyter_2.png)
