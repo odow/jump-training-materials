@@ -517,7 +517,7 @@ dispatch_plot = @df(
     uc_df,
     Plots.plot(
         :demand,
-        [:dispatch_G1, :dispatch_G2, :wind],
+        [:dispatch_G1, :dispatch_G2, :dispatch_wind],
         labels = ["G1" "G2" "Wind"],
         title = "Dispatch [MW]",
         legend = :bottomright,
