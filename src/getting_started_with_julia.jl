@@ -34,7 +34,7 @@
 #    * If the question is JuMP-related, ask in the [Optimization (Mathematical)](https://discourse.julialang.org/c/domain/opt/13)
 #      section, or tag your question with "jump"
 
-#  * Type `?`, a space, and then the name of the function in the Julia Replace
+#  * Type `?`, a space, and then the name of the function in the Julia REPL
 
 ?
 
