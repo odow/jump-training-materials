@@ -355,6 +355,36 @@ d2["B"]
 
 d2["D"][:foo]
 
+# ## Structs
+
+# You can define custom datastructures with `struct`:
+
+struct MyStruct
+    x::Int
+    y::String
+    z::Dict{Int,Int}
+end
+
+a = MyStruct(1, "a", Dict(2 => 3))
+
+# By default, these are not mutable
+
+a.x = 1
+
+# However, you can declare `mutable struct`:
+
+mutable struct MyStructMutable
+    x::Int
+    y::String
+    z::Dict{Int,Int}
+end
+
+a = MyStructMutable(1, "a", Dict(2 => 3))
+
+a.x = 2
+
+a
+
 # ## Loops
 
 # Julia has native support for for-each style loops with the syntax

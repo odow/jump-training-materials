@@ -81,11 +81,19 @@ using StatsPlots
 # Define some input data about the test system.
 
 # We define some thermal generators:
-struct ThermalGenerator
-    min::Float64
-    max::Float64
-    fixed_cost::Float64
-    variable_cost::Float64
+
+function ThermalGenerator(
+    min::Float64,
+    max::Float64,
+    fixed_cost::Float64,
+    variable_cost::Float64,
+)
+    return (
+        min = min,
+        max = max,
+        fixed_cost = fixed_cost,
+        variable_cost = variable_cost,
+    )
 end
 
 generators = [
@@ -95,16 +103,17 @@ generators = [
 
 # A wind generator
 
-struct WindGenerator
-    variable_cost::Float64
-end
+WindGenerator(variable_cost::Float64) = (variable_cost = variable_cost,)
 
 wind_generator = WindGenerator(50.0)
 
-# An a scenario
-struct Scenario
-    demand::Float64
-    wind::Float64
+# And a scenario
+
+function Scenario(
+    demand::Float64,
+    wind::Float64,
+)
+    return (demand = demand, wind = wind)
 end
 
 scenario = Scenario(1500.0, 200.0)
@@ -112,11 +121,7 @@ scenario = Scenario(1500.0, 200.0)
 # Create a function solve_ed, which solves the economic dispatch problem for a
 # given set of input parameters.
 
-function solve_ed(
-    generators::Vector{ThermalGenerator},
-    wind::WindGenerator,
-    scenario::Scenario,
-)
+function solve_ed(generators::Vector, wind, scenario)
     ## Define the economic dispatch (ED) model
     ed = Model(GLPK.Optimizer)
     ## Define decision variables
@@ -160,7 +165,7 @@ println("Total cost: \$", solution.total_cost)
 # In the following exercise we adjust the incremental cost of generator G1 and
 # observe its impact on the total cost.
 
-function scale_generator_cost(g::ThermalGenerator, scale)
+function scale_generator_cost(g, scale)
     return ThermalGenerator(
         g.min,
         g.max,
@@ -211,9 +216,9 @@ c_g_scale_df
 # Compare the computing time in case of the above and below models.
 
 function solve_ed_inplace(
-    generators::Vector{ThermalGenerator},
-    wind::WindGenerator,
-    scenario::Scenario,
+    generators::Vector,
+    wind,
+    scenario,
     scale::AbstractVector{Float64},
 )
     start = time()
@@ -289,18 +294,13 @@ demand_scale_df = DataFrames.DataFrame(
     total_cost = Float64[],
 )
 
-"""
-    Base.:(*)(scale::Float64, scenario::Scenario)
 
-Julia lets you overload any method. Here we add a method to `*` so we can scale
-the demand of a scenario.
-"""
-function Base.:(*)(scale::Float64, scenario::Scenario)
+function scale_demand(scenario, scale)
     return Scenario(scale * scenario.demand, scenario.wind)
 end
 
 for demand_scale in 0.2:0.1:1.5
-    new_scenario = demand_scale * scenario
+    new_scenario = scale_demand(scenario, demand_scale)
     sol = solve_ed(generators, wind_generator, new_scenario)
     push!(
         demand_scale_df,
@@ -408,11 +408,7 @@ Plots.plot(dispatch_plot, wind_plot)
 # In the following example we convert the ED model explained above to the UC
 # model.
 
-function solve_uc(
-    generators::Vector{ThermalGenerator},
-    wind::WindGenerator,
-    scenario::Scenario,
-)
+function solve_uc(generators::Vector, wind, scenario)
     uc = Model(GLPK.Optimizer)
     N = length(generators)
     @variable(uc, generators[i].min <= g[i = 1:N] <= generators[i].max)
@@ -472,7 +468,7 @@ uc_df = DataFrames.DataFrame(
 )
 
 for demand_scale in 0.2:0.1:1.5
-    new_scenario = demand_scale * scenario
+    new_scenario = scale_demand(scenario, demand_scale)
     sol = solve_uc(generators, wind_generator, new_scenario)
     if sol.status == MOI.OPTIMAL
         push!(
@@ -527,3 +523,84 @@ dispatch_plot = @df(
 )
 
 Plots.plot(commitment_plot, dispatch_plot)
+
+# ## Nonlinear economic dispatch
+
+# As a final example, we modify our economic dispatch problem in two ways:
+#
+#  * The thermal cost function is user-defined
+#  * The output of the wind is only the square-root of the dispatch
+
+import Ipopt
+
+"""
+    thermal_cost_function(g)
+
+A user-defined thermal cost function in pure-Julia! You can include
+nonlinearities, and even things like control flow.
+
+!!! warning
+    It's still up to you to make sure that the function has a meaningful
+    derivative.
+"""
+function thermal_cost_function(g)
+    if g <= 500
+        return g
+    else
+        return g + 1e-2 * (g - 500)^2
+    end
+end
+
+function solve_nonlinear_ed(
+    generators::Vector,
+    wind,
+    scenario;
+    silent::Bool = false,
+)
+    model = Model(Ipopt.Optimizer)
+    if silent
+        set_silent(model)
+    end
+    register(model, :tcf, 1, thermal_cost_function; autodiff = true)
+    N = length(generators)
+    @variable(model, generators[i].min <= g[i = 1:N] <= generators[i].max)
+    @variable(model, 0 <= w <= scenario.wind)
+    @NLobjective(
+        model,
+        Min,
+        sum(generators[i].variable_cost * tcf(g[i]) for i in 1:N) +
+        wind.variable_cost * w,
+    )
+    @NLconstraint(model, sum(g[i] for i in 1:N) + sqrt(w) == scenario.demand)
+    optimize!(model)
+    return (
+        g = value.(g),
+        w = value(w),
+        wind_spill = scenario.wind - value(w),
+        total_cost = objective_value(model),
+    )
+end
+
+solution = solve_nonlinear_ed(generators, wind_generator, scenario)
+
+# Now let's see how the wind is dispatched as a function of the cost:
+
+wind_cost = 0.0:1:100
+wind_dispatch = Float64[]
+for c in wind_cost
+    sol = solve_nonlinear_ed(
+        generators,
+        WindGenerator(c),
+        scenario;
+        silent = true,
+    )
+    push!(wind_dispatch, sol.w)
+end
+
+Plots.plot(
+    wind_cost,
+    wind_dispatch,
+    xlabel = "Cost",
+    ylabel = "Dispatch [MW]",
+    label = false,
+ )
