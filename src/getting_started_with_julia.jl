@@ -299,7 +299,7 @@ typeof(t)
 
 t[2]
 
-# And they be "unpacked" like so:
+# And they can be "unpacked" like so:
 
 a, b, c = t
 b
@@ -399,7 +399,7 @@ end
 
 #-
 
-for i in [1.2, 2.3, 3.4, 4.5, 5.6]
+for i in 1.2:1.1:5.6
     println(i)
 end
 
