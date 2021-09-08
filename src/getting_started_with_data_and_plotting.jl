@@ -23,8 +23,8 @@
 # In many cases we might need to read data available in an external file rather
 # than type it into Julia ourselves.
 
-# This tutorial is concerned with reading tabular data into Julia and using it
-# for a JuMP model. We'll cover basic plotting along the way.
+# This tutorial is concerned with reading tabular data into Julia. We'll cover
+# basic plotting along the way.
 
 # ## Where to get help
 
@@ -137,6 +137,10 @@ end
 
 DataFrames.rename!(eyecolor_count, :x1 => :count)
 
+# Drop some missing rows:
+
+DataFrames.dropmissing!(eyecolor_count, :Eyecolor)
+
 # Then we can visualize the data:
 
 sort!(eyecolor_count, :count, rev = true)
@@ -169,15 +173,6 @@ delim_df = CSV.read(
     joinpath(DATA_DIR, "Soccer.txt"),
     DataFrames.DataFrame,
     delim = "::",
-)
-
-# Note that by default, are read-only. If we wish to make changes to the data
-# read, we pass the `copycols = true` argument in the function call.
-
-ss_df = CSV.read(
-    joinpath(DATA_DIR, "Cereal.txt"),
-    DataFrames.DataFrame,
-    copycols = true,
 )
 
 # ## Working with DataFrames
@@ -257,3 +252,7 @@ csv_df
 #     There are a lot more things which can be done with a DataFrame. Read the
 #     [docs](https://juliadata.github.io/DataFrames.jl/stable/) for more
 #     information.
+
+# For information on dplyr-type syntax:
+ # * Read: https://dataframes.juliadata.org/stable/man/querying_frameworks/
+ # * Check out DataFramesMeta.jl: https://github.com/JuliaData/DataFramesMeta.jl

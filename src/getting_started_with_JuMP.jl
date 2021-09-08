@@ -21,7 +21,6 @@
 # # Getting started with JuMP
 
 # This tutorial is aimed at providing a quick introduction to writing JuMP code.
-# If you're new to Julia, you should start with [Getting started with Julia](@ref).
 
 # ## What is JuMP?
 
@@ -297,18 +296,6 @@ u = [10; 11; 12; 13; 14; 15; 16; 17; 18; 19]
 # or
 
 @variable(model, binary_z, binary = true)
-
-# #### Semidefinite variables
-
-# JuMP also supports modeling with semidefinite variables. A square symmetric
-# matrix X is positive semidefinite if all eigenvalues are nonnegative.
-
-@variable(model, psd_x[1:2, 1:2], PSD)
-
-# We can also impose a weaker constraint that the square matrix is only
-# symmetric (instead of positive semidefinite) as follows:
-
-@variable(model, sym_x[1:2, 1:2], Symmetric)
 
 # ## Constraint basics
 
