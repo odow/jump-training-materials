@@ -120,6 +120,11 @@ previous installed:
 `git pull` the latest changes. All of the packages will remain installed, so the
 only thing that will change are the Jupyter notebooks.
 
+### Common problems
+
+ - If you made changes to a notebook that was updated, `git` will throw an error saying `error: Your local changes to the following files would be overwritten by merge:` indicating the corresponding notebooks.
+   If the changes can be discarded, do `git checkout notebook_name.ipynb` and then try `git pull` again.
+
 **If you don't have `git` installed**
 
 Download a new copy of the zip file, and then copy-paste the new notebooks into
