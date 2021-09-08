@@ -164,7 +164,16 @@ isapprox(sin(2π / 3), √3 / 2; atol = 1e-8)
 #     optimization models. A common mistake you're likely to make is checking
 #     whether a binary variable is 0 using `value(z) == 0`. Always remember to
 #     use something like `isapprox` when comparing floating point numbers.
-#
+#     Note that `isapprox` will always return `false` if one of the number being
+#     compared is `0` and `atol` is zero (its default value).
+
+1e-300 ≈ 0.0
+
+# so always set a nonzero value of `atol` if one of the arguments can be zero.
+
+isapprox(1e-9, 0.0, atol=1e-8)
+
+# !!! tip
 #     Gurobi has a [good series of articles](https://www.gurobi.com/documentation/9.0/refman/num_grb_guidelines_for_num.html)
 #     on the implications of floating point in optimization if you want to read
 #     more.
