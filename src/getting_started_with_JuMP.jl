@@ -25,7 +25,7 @@
 # ## What is JuMP?
 
 # JuMP ("Julia for Mathematical Programming") is an open-source modeling
-# language that is embedded in Julia. It allows users to users formulate various
+# language that is embedded in Julia. It allows users to formulate various
 # classes of optimization problems (linear, mixed-integer, quadratic, conic
 # quadratic, semidefinite, and nonlinear) with easy-to-read code. These problems
 # can then be solved using state-of-the-art open-source and commercial solvers.
@@ -45,7 +45,7 @@
 
 # You also need to include a Julia package which provides an appropriate solver.
 # One such solver is `GLPK.Optimizer`, which is provided by the
-# [GLPK.jl package](https://github.com/JuliaOpt/GLPK.jl).
+# [GLPK.jl package](https://github.com/jump-dev/GLPK.jl).
 # ```julia
 # import Pkg
 # Pkg.add("GLPK")
@@ -131,7 +131,7 @@ model = Model(GLPK.Optimizer)
 
 print(model)
 
-# To solve the optimization problem, call the [`optimize!`] function.
+# To solve the optimization problem, call the `optimize!` function.
 
 optimize!(model)
 

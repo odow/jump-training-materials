@@ -57,7 +57,7 @@ import DataFrames
 # through the Julia package system.
 # ```julia
 # using Pkg
-# Pkg.add("Plotting")
+# Pkg.add("Plots")
 # ```
 
 import Plots
@@ -186,7 +186,7 @@ delim_df = CSV.read(
 
 DataFrames.size(ss_df)
 
-# We can also us the `nrow` and `ncol` functions to get the number of rows and
+# We can also use the `nrow` and `ncol` functions to get the number of rows and
 # columns respectively.
 
 DataFrames.nrow(ss_df), DataFrames.ncol(ss_df)
