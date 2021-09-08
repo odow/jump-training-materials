@@ -39,7 +39,7 @@ Once downloaded, unzip it to an appropriate location.
 ## Open Julia
 
 Now open Julia, either by typing `julia` at a terminal, or by launching the icon
-from whereever you installed it.
+from wherever you installed it.
 
 Once open, you should be faced with the Julia *REPL* that looks like this:
 
