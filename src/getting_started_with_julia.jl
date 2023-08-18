@@ -20,23 +20,13 @@
 
 # # Getting started with Julia
 
-# Since JuMP is embedded in Julia, knowing some basic Julia is important
-# for learning JuMP. This tutorial is designed to provide a minimalist
-# crash course in the basics of Julia. You can find resources that provide
-# a more comprehensive introduction to Julia [here](https://julialang.org/learning/).
+# Because JuMP is embedded in Julia, knowing some basic Julia is important
+# before you start learning JuMP.
 
-# ## Where to get help
-
-#  * Read the documentation
-#    * JuMP https://jump.dev/JuMP.jl/stable/
-#    * Julia https://docs.julialang.org/en/v1/
-#  * Ask (or browse) the Julia community forum: https://discourse.julialang.org
-#    * If the question is JuMP-related, ask in the [Optimization (Mathematical)](https://discourse.julialang.org/c/domain/opt/13)
-#      section, or tag your question with "jump"
-
-#  * Type `?`, a space, and then the name of the function in the Julia REPL
-
-?
+# !!! tip
+#     This tutorial is designed to provide a minimalist crash course in the
+#     basics of Julia. You can find resources that provide a more comprehensive
+#     introduction to Julia [here](https://julialang.org/learning/).
 
 # ## Installing Julia
 
@@ -49,29 +39,103 @@
 # Next, you need an IDE to develop in. VS Code is a popular choice, so follow
 # [these install instructions](https://www.julia-vscode.org/docs/stable/gettingstarted/).
 
+# Julia can also be used with [Jupyter notebooks](https://github.com/JuliaLang/IJulia.jl)
+# or the reactive notebooks of [Pluto.jl](https://github.com/fonsp/Pluto.jl).
+
+# ## The Julia REPL
+
+# The main way of interacting with Julia is via its REPL (Read Evaluate Print
+# Loop). To access the REPL, start the Julia executable to arrive at the
+# `julia>` prompt, and then start coding:
+
+1 + 1
+
+# As your programs become larger, write a script as a text file, and then run
+# that file using:
+# ```julia
+# julia> include("path/to/file.jl")
+# ```
+
+# !!! warning
+#     Because of Julia's startup latency, running scripts from the command line
+#     like the following is slow:
+#     ```
+#     $ julia path/to/file.jl
+#     ```
+#     Use the REPL or a notebook instead, and read [The "time-to-first-solve" issue](@ref)
+#     for more information.
+
+# ### Code blocks in this documentation
+
+# In this documentation you'll see a mix of code examples with and without the
+# `julia>`.
+
+# The Julia prompt is mostly used to demonstrate short code snippets, and the
+# output is exactly what you will see if run from the REPL.
+
+# Blocks without the `julia>` can be copy-pasted into the REPL, but they are
+# used because they enable richer output like plots or LaTeX to be displayed in
+# the online and [PDF](https://jump.dev/JuMP.jl/stable/JuMP.pdf) versions of the
+# documentation. If you run them from the REPL you may see different output.
+
+# ## Where to get help
+
+#  * Read the documentation
+#    * JuMP [https://jump.dev/JuMP.jl/stable/](https://jump.dev/JuMP.jl/stable/)
+#    * Julia [https://docs.julialang.org/en/v1/](https://docs.julialang.org/en/v1/)
+#  * Ask (or browse) the Julia community forum: [https://discourse.julialang.org](https://discourse.julialang.org)
+#    * If the question is JuMP-related, ask in the [Optimization (Mathematical)](https://discourse.julialang.org/c/domain/opt/13)
+#      section, or tag your question with "jump"
+
+# To access the built-in help at the REPL, type `?` to enter help-mode, followed
+# by the name of the function to lookup:
+# ```julia
+# help?> print
+# search: print println printstyled sprint isprint prevind parentindices precision escape_string
+#
+#   print([io::IO], xs...)
+#
+#   Write to io (or to the default output stream stdout if io is not given) a canonical
+#   (un-decorated) text representation. The representation used by print includes minimal formatting
+#   and tries to avoid Julia-specific details.
+#
+#   print falls back to calling show, so most types should just define show. Define print if your
+#   type has a separate "plain" representation. For example, show displays strings with quotes, and
+#   print displays strings without quotes.
+#
+#   string returns the output of print as a string.
+#
+#   Examples
+#   ≡≡≡≡≡≡≡≡≡≡
+#
+#   julia> print("Hello World!")
+#   Hello World!
+#   julia> io = IOBuffer();
+#
+#   julia> print(io, "Hello", ' ', :World!)
+#
+#   julia> String(take!(io))
+#   "Hello World!"
+# ```
+
 # ## Numbers and arithmetic
 
 # Since we want to solve optimization problems, we're going to be using a lot of
 # math. Luckily, Julia is great for math, with all the usual operators:
 
-@show 1 + 1
-@show 1 - 2
-@show 2 * 2
-@show 4 / 5
-@show 3^2
-
-# !!! info
-#     The `@` in front of something indicates that it is a macro, which is just
-#     a special type of function. In this case, `@show` prints the expression as
-#     typed (e.g., `1 - 2`), as well as the evaluation of the expression (`-1`).
+1 + 1
+1 - 2
+2 * 2
+4 / 5
+3^2
 
 # Did you notice how Julia didn't print `.0` after some of the numbers? Julia is
 # a dynamic language, which means you never have to explicitly declare the type
 # of a variable. However, in the background, Julia is giving each variable a
 # type. Check the type of something using the `typeof` function:
 
-@show typeof(1)
-@show typeof(1.0)
+typeof(1)
+typeof(1.0)
 
 # Here `1` is an `Int64`, which is an integer with 64 bits of precision, and
 # `1.0` is a `Float64`, which is a floating point number with 64-bits of
@@ -84,10 +148,10 @@
 # We create complex numbers using `im`:
 
 x = 2 + 1im
-@show real(x)
-@show imag(x)
-@show typeof(x)
-@show x * (1 - 2im)
+real(x)
+imag(x)
+typeof(x)
+x * (1 - 2im)
 
 # !!! info
 #     The curly brackets surround what we call the _parameters_ of a type. You
@@ -121,11 +185,11 @@ typeof(2π / 3)
 # approximation of a real number using 64-bits of information.
 
 # Because it is an approximation, things we know hold true in mathematics don't
-# hold true in a computer! For example:
+# hold true in a computer. For example:
 
 0.1 * 3 == 0.3
 
-#- A more complicated example is:
+# A more complicated example is:
 
 sin(2π / 3) == √3 / 2
 
@@ -135,12 +199,9 @@ sin(2π / 3) == √3 / 2
 # Let's see what the differences are:
 
 0.1 * 3 - 0.3
-
-#-
-
 sin(2π / 3) - √3 / 2
 
-# They are small, but not zero!
+# They are small, but not zero.
 
 # One way of explaining this difference is to consider how we would write
 # `1 / 3` and `2 / 3` using only four digits after the decimal point. We would
@@ -150,12 +211,9 @@ sin(2π / 3) - √3 / 2
 # Let's try that again using ≈ (`\approx + [TAB]`) instead of `==`:
 
 0.1 * 3 ≈ 0.3
-
-#-
-
 sin(2π / 3) ≈ √3 / 2
 
-# `≈` is just a clever way of calling the `isapprox` function:
+# `≈` is a clever way of calling the `isapprox` function:
 
 isapprox(sin(2π / 3), √3 / 2; atol = 1e-8)
 
@@ -164,14 +222,15 @@ isapprox(sin(2π / 3), √3 / 2; atol = 1e-8)
 #     optimization models. A common mistake you're likely to make is checking
 #     whether a binary variable is 0 using `value(z) == 0`. Always remember to
 #     use something like `isapprox` when comparing floating point numbers.
-#     Note that `isapprox` will always return `false` if one of the number being
-#     compared is `0` and `atol` is zero (its default value).
+
+# Note that `isapprox` will always return `false` if one of the number being
+# compared is `0` and `atol` is zero (its default value).
 
 1e-300 ≈ 0.0
 
 # so always set a nonzero value of `atol` if one of the arguments can be zero.
 
-isapprox(1e-9, 0.0, atol=1e-8)
+isapprox(1e-9, 0.0; atol = 1e-8)
 
 # !!! tip
 #     Gurobi has a [good series of articles](https://www.gurobi.com/documentation/9.0/refman/num_grb_guidelines_for_num.html)
@@ -183,7 +242,7 @@ isapprox(1e-9, 0.0, atol=1e-8)
 
 1 + 1e-16 == 1
 
-# It even turns out that floating point numbers aren't associative!
+# It even turns out that floating point numbers aren't associative:
 
 (1 + 1e-16) - 1e-16 == 1 + (1e-16 - 1e-16)
 
@@ -192,53 +251,66 @@ isapprox(1e-9, 0.0, atol=1e-8)
 
 # ## Vectors, matrices and arrays
 
-# Similar to Matlab, Julia has native support for vectors, matrices and tensors;
+# Similar to MATLAB, Julia has native support for vectors, matrices and tensors;
 # all of which are represented by arrays of different dimensions. Vectors are
 # constructed by comma-separated elements surrounded by square brackets:
 
 b = [5, 6]
 
-# !!! info
-#     `Array{Int64, 1}` means that this is an `Array`, with `Int64` elements,
-#     and it has `1` dimension.
-
-# Matrices can by constructed with spaces separating the columns, and semicolons
+# Matrices can be constructed with spaces separating the columns, and semicolons
 # separating the rows:
 
 A = [1.0 2.0; 3.0 4.0]
-
-# Note how this time the type is `Array{Float64, 2}`; the elements are `Float64`
-# and there are `2` dimensions.
 
 # We can do linear algebra:
 
 x = A \ b
 
 # !!! info
-#     Here is floating point at work again! `x` is approximately `[-4, 4.5]`.
-
-#-
+#     Here is floating point at work again; `x` is approximately `[-4, 4.5]`.
 
 A * x
-
-#-
-
 A * x ≈ b
 
 # Note that when multiplying vectors and matrices, dimensions matter. For
 # example, you can't multiply a vector by a vector:
 
-b * b
+try                         #hide
+    b * b
+catch err                   #hide
+    showerror(stderr, err)  #hide
+end                         #hide
 
 # But multiplying transposes works:
 
 b' * b
-
-#-
-
 b * b'
 
 # ## Other common types
+
+# ### Comments
+
+# Although not technically a type, code comments begin with the `#` character:
+
+1 + 1  # This is a comment
+
+# Multiline comments begin with `#=` and end with `=#`:
+# ```julia
+# #=
+# Here is a
+# multiline comment
+# =#
+# ```
+
+# Comments can even be nested inside expressions. This is sometimes helpful when
+# documenting inputs to functions:
+
+isapprox(
+    sin(π),
+    0.0;
+    #= We need an explicit atol here because we are comparing with 0 =#
+    atol = 0.001,
+)
 
 # ### Strings
 
@@ -250,29 +322,38 @@ typeof("This is Julia")
 
 typeof("π is about 3.1415")
 
-# Use [`println`](https://docs.julialang.org/en/v1/base/io-network/#Base.println)
-# to print a string:
+# Use `println` to print a string:
 
 println("Hello, World!")
 
-# We can use `$()` to interpolate values into a string:
+# Use `$()` to interpolate values into a string:
 
 x = 123
 println("The value of x is: $(x)")
 
+# Use triple-quotes for multiline strings:
+
+s = """
+Here is
+a
+multiline string
+"""
+
+println(s)
+
 # ### Symbols
 
 # Julia `Symbol`s are a data structure from the compiler that represent Julia
-# identifiers (i.e., variable names).
+# identifiers (that is, variable names).
 
 println("The value of x is: $(eval(:x))")
 
-# !!! tip
+# !!! warning
 #     We used `eval` here to demonstrate how Julia links `Symbol`s to variables.
 #     However, avoid calling `eval` in your code. It is usually a sign that your
 #     code is doing something that could be more easily achieved a different
-#     way. The [Community Forum](https://discourse.julialang.org/c/domain/opt/13)
-#     is a good place to ask for advice on alternative approaches.
+#     way. The [Community Forum](https://jump.dev/forum) is a good place to ask
+#     for advice on alternative approaches.
 
 typeof(:x)
 
@@ -282,14 +363,11 @@ typeof(:x)
 # Convert between `String` and `Symbol` using their constructors:
 
 String(:abc)
-
-#-
-
 Symbol("abc")
 
 # !!! tip
 #     `Symbol`s are often (ab)used to stand in for a `String` or an `Enum`, when
-#     one of the former is likely a better choice. The JuMP style guide
+#     one of the latter is likely a better choice. The JuMP [Style guide](@ref)
 #     recommends reserving `Symbol`s for identifiers. See [@enum vs. Symbol](@ref)
 #     for more.
 
@@ -299,9 +377,6 @@ Symbol("abc")
 # immutable collections of values. For example:
 
 t = ("hello", 1.2, :foo)
-
-#-
-
 typeof(t)
 
 # Tuples can be accessed by index, similar to arrays:
@@ -334,7 +409,7 @@ d1 = Dict(1 => "A", 2 => "B", 4 => "D")
 #     Type-stuff again: `Dict{Int64,String}` is a dictionary with `Int64` keys
 #     and `String` values.
 
-# Looking up a values uses the bracket syntax:
+# Looking up a value uses the bracket syntax:
 
 d1[2]
 
@@ -344,24 +419,20 @@ Dict("A" => 1, "B" => 2.5, "D" => 2 - 3im)
 
 # !!! info
 #     Julia types form a hierarchy. Here the value type of the dictionary is
-#     `Number`, which is a generalization of `Int64`, `Float64`, and `Complex{Int}`.
-#     In general, having variables with "Abstract" types like `Number` can lead
-#     to slower code, so you should try to make sure every element in a
-#     dictionary or vector is the same type. For example, in this case we could
-#     represent every element as a `Complex{Float64}`:
+#     `Number`, which is a generalization of `Int64`, `Float64`, and
+#     `Complex{Int}`. Leaf nodes in this hierarchy are called "concrete" types,
+#     and all others are called "Abstract." In general, having variables with
+#     abstract types like `Number` can lead to slower code, so you should try to
+#     make sure every element in a dictionary or vector is the same type. For
+#     example, in this case we could represent every element as a
+#     `Complex{Float64}`:
 
 Dict("A" => 1.0 + 0.0im, "B" => 2.5 + 0.0im, "D" => 2.0 - 3.0im)
 
 # Dictionaries can be nested:
 
 d2 = Dict("A" => 1, "B" => 2, "D" => Dict(:foo => 3, :bar => 4))
-
-#-
-
 d2["B"]
-
-#-
-
 d2["D"][:foo]
 
 # ## Structs
@@ -375,12 +446,17 @@ struct MyStruct
 end
 
 a = MyStruct(1, "a", Dict(2 => 3))
+a.x
 
 # By default, these are not mutable
 
-a.x = 1
+try                         #hide
+    a.x = 2
+catch err                   #hide
+    showerror(stderr, err)  #hide
+end                         #hide
 
-# However, you can declare `mutable struct`:
+# However, you can declare a `mutable struct` which is mutable:
 
 mutable struct MyStructMutable
     x::Int
@@ -389,9 +465,8 @@ mutable struct MyStructMutable
 end
 
 a = MyStructMutable(1, "a", Dict(2 => 3))
-
+a.x
 a.x = 2
-
 a
 
 # ## Loops
@@ -406,8 +481,6 @@ end
 # !!! info
 #     Ranges are constructed as `start:stop`, or `start:step:stop`.
 
-#-
-
 for i in 1.2:1.1:5.6
     println(i)
 end
@@ -418,16 +491,16 @@ for (key, value) in Dict("A" => 1, "B" => 2.5, "D" => 2 - 3im)
     println("$(key): $(value)")
 end
 
-# Note that in contrast to vector languages like Matlab and R, loops do not
+# Note that in contrast to vector languages like MATLAB and R, loops do not
 # result in a significant performance degradation in Julia.
 
-# ## Control Flow
+# ## Control flow
 
-# Julia control flow is similar to Matlab, using the keywords
+# Julia control flow is similar to MATLAB, using the keywords
 # `if-elseif-else-end`, and the logical operators `||` and `&&` for **or** and
 # **and** respectively:
 
-for i in 0:3:15
+for i in 0:5:15
     if i < 5
         println("$(i) is less than 5")
     elseif i < 10
@@ -486,7 +559,7 @@ function print_it(x; prefix = "value:")
     return println("$(prefix) $(x)")
 end
 print_it(1.234)
-print_it(1.234, prefix = "val:")
+print_it(1.234; prefix = "val:")
 
 # The keyword `return` is used to specify the return values of a function:
 
@@ -495,10 +568,7 @@ function mult(x; y = 2.0)
 end
 
 mult(4.0)
-
-#-
-
-mult(4.0, y = 5.0)
+mult(4.0; y = 5.0)
 
 # ### Anonymous functions
 
@@ -507,9 +577,6 @@ mult(4.0, y = 5.0)
 
 f = x -> x^2
 f(2)
-
-#-
-
 map(x -> x^2, 1:4)
 
 # ### Type parameters
@@ -529,18 +596,22 @@ function foo(x::Number)
     return x + 1
 end
 
-@show foo(2)
-@show foo(2.0)
-@show foo(1 + 1im)
+foo(2)
+foo(2.0)
+foo(1 + 1im)
 
 # But what happens if we call `foo` with something we haven't defined it for?
 
-foo([1, 2, 3])
+try                         #hide
+    foo([1, 2, 3])
+catch err                   #hide
+    showerror(stderr, err)  #hide
+end                         #hide
 
-# We get a dreaded `MethodError`! A `MethodError` means that you passed a
+# A `MethodError` means that you passed a
 # function something that didn't match the type that it was expecting. In this
 # case, the error message says that it doesn't know how to handle an
-# `Array{Int64, 1}`, but it does know how to handle `Float64`, `Int64`, and
+# `Vector{Int64}`, but it does know how to handle `Float64`, `Int64`, and
 # `Number`.
 #
 # !!! tip
@@ -549,17 +620,17 @@ foo([1, 2, 3])
 
 # ### Broadcasting
 
-# In the example above, we didn't define what to do if `f` was passed an
-# `Array`. Luckily, Julia provides a convenient syntax for mapping `f`
-# element-wise over arrays! Just add a `.` between the name of the function and
+# In the example above, we didn't define what to do if `f` was passed a
+# `Vector`. Luckily, Julia provides a convenient syntax for mapping `f`
+# element-wise over arrays. Just add a `.` between the name of the function and
 # the opening `(`. This works for _any_ function, including functions with
 # multiple arguments. For example:
 
 f.([1, 2, 3])
 
 # !!! tip
-#     Get a `MethodError` when calling a function that takes an `Array`? Try
-#     broadcasting it!
+#     Get a `MethodError` when calling a function that takes a `Vector`,
+#     `Matrix`, or `Array`? Try broadcasting.
 
 # ## Mutable vs immutable objects
 
@@ -567,7 +638,7 @@ f.([1, 2, 3])
 # inside them. A good example is an array. You can modify the contents of an
 # array without having to make a new array.
 
-# In contrast, types like `Float64` are *immutable*. You can't modify the
+# In contrast, types like `Float64` are *immutable*. You cannot modify the
 # contents of a `Float64`.
 
 # This is something to be aware of when passing types into functions. For
@@ -594,9 +665,6 @@ println("immutable_type: $(immutable_type)")
 # You can check mutability with the `isimmutable` function:
 
 isimmutable([1, 2, 3])
-
-#-
-
 isimmutable(1)
 
 # ## The package manager

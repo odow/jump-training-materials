@@ -20,7 +20,10 @@
 
 # # Getting started with JuMP
 
-# This tutorial is aimed at providing a quick introduction to writing JuMP code.
+# This tutorial is aimed at providing a quick introduction to writing and
+# solving optimization models with JuMP.
+
+# If you're new to Julia, start by reading [Getting started with Julia](@ref).
 
 # ## What is JuMP?
 
@@ -33,6 +36,35 @@
 # JuMP also makes advanced optimization techniques easily accessible from a
 # high-level language.
 
+# ## What is a solver?
+
+# A solver is a software package that incorporates algorithms for finding
+# solutions to one or more classes of problem.
+
+# For example, HiGHS is a solver for linear programming (LP) and mixed integer
+# programming (MIP) problems. It incorporates algorithms such as the simplex
+# method and the interior-point method.
+
+# The [Supported-solvers](@ref) table lists the open-source and commercial
+# solvers that JuMP currently supports.
+
+# ## What is MathOptInterface?
+
+# Each solver has its own concepts and data structures for representing
+# optimization models and obtaining results.
+
+# [MathOptInterface](https://github.com/jump-dev/MathOptInterface.jl) (MOI) is
+# an abstraction layer that JuMP uses to convert from the problem written in
+# JuMP to the solver-specific data structures for each solver.
+
+# MOI can be used directly, or through a higher-level modeling interface like
+# JuMP.
+
+# Because JuMP is built on top of MOI, you'll often see the `MathOptInterface.`
+# prefix displayed when JuMP types are printed. However, you'll only need to
+# understand and interact with MOI to accomplish advanced tasks such as creating
+# [solver-independent callbacks](@ref callbacks_manual).
+
 # ## Installation
 
 # JuMP is a package for Julia. From Julia, JuMP is installed by using the
@@ -44,20 +76,21 @@
 # ```
 
 # You also need to include a Julia package which provides an appropriate solver.
-# One such solver is `GLPK.Optimizer`, which is provided by the
-# [GLPK.jl package](https://github.com/jump-dev/GLPK.jl).
+# One such solver is `HiGHS.Optimizer`, which is provided by the
+# [HiGHS.jl package](https://github.com/jump-dev/HiGHS.jl).
 # ```julia
 # import Pkg
-# Pkg.add("GLPK")
+# Pkg.add("HiGHS")
 # ```
 # See [Installation Guide](@ref) for a list of other solvers you can use.
 
 # ## An example
 
-# Let's try to solve the following linear programming problem by using JuMP and
-# GLPK. We will first look at the complete code to solve the problem and then go
+# Let's solve the following linear programming problem using JuMP and HiGHS.
+# We will first look at the complete code to solve the problem and then go
 # through it step by step.
 
+# Here's the problem:
 # ```math
 # \begin{aligned}
 # & \min & 12x + 20y \\
@@ -68,9 +101,11 @@
 # \end{aligned}
 # ```
 
+# And here's the code to solve this problem:
+
 using JuMP
-using GLPK
-model = Model(GLPK.Optimizer)
+using HiGHS
+model = Model(HiGHS.Optimizer)
 @variable(model, x >= 0)
 @variable(model, 0 <= y <= 3)
 @objective(model, Min, 12x + 20y)
@@ -78,39 +113,45 @@ model = Model(GLPK.Optimizer)
 @constraint(model, c2, 7x + 12y >= 120)
 print(model)
 optimize!(model)
-@show termination_status(model)
-@show primal_status(model)
-@show dual_status(model)
-@show objective_value(model)
-@show value(x)
-@show value(y)
-@show shadow_price(c1)
-@show shadow_price(c2)
+termination_status(model)
+primal_status(model)
+dual_status(model)
+objective_value(model)
+value(x)
+value(y)
+shadow_price(c1)
+shadow_price(c2)
 
 # ## Step-by-step
 
-# Once JuMP is installed, to use JuMP in your programs, we just need to write:
+# Once JuMP is installed, to use JuMP in your programs write:
 
 using JuMP
 
 # We also need to include a Julia package which provides an appropriate solver.
-# We want to use `GLPK.Optimizer` here which is provided by the `GLPK.jl`
-# package.
+# We want to use `HiGHS.Optimizer` here which is provided by the `HiGHS.jl`
+# package:
 
-using GLPK
+using HiGHS
 
-# A model object is a container for variables, constraints, solver options, etc.
-# Models are created with the [`Model`](@ref) function. The model can be created
-# with an optimizer attached with default arguments by calling the constructor
-# with the optimizer type, as follows:
+# JuMP builds problems incrementally in a `Model` object. Create a model by
+# passing an optimizer to the [`Model`](@ref) function:
 
-model = Model(GLPK.Optimizer)
+model = Model(HiGHS.Optimizer)
 
 # Variables are modeled using [`@variable`](@ref):
 
 @variable(model, x >= 0)
 
-# They can have lower and upper bounds.
+# !!! info
+#     The macro creates a new Julia object, `x`, in the current scope. We could
+#     have made this more explicit by writing:
+#     ```julia
+#     x = @variable(model, x >= 0)
+#     ```
+#     but the macro does this automatically for us to save writing `x` twice.
+
+# Variables can have lower and upper bounds:
 
 @variable(model, 0 <= y <= 30)
 
@@ -118,25 +159,22 @@ model = Model(GLPK.Optimizer)
 
 @objective(model, Min, 12x + 20y)
 
-# Constraints are modeled using [`@constraint`](@ref). Here `c1` and `c2` are
-# the names of our constraint.
+# Constraints are modeled using [`@constraint`](@ref). Here, `c1` and `c2` are
+# the names of our constraint:
 
 @constraint(model, c1, 6x + 8y >= 100)
-
-#-
-
 @constraint(model, c2, 7x + 12y >= 120)
 
-#- Call `print` to display the model:
+# Call `print` to display the model:
 
 print(model)
 
-# To solve the optimization problem, call the `optimize!` function.
+# To solve the optimization problem, call the [`optimize!`](@ref) function:
 
 optimize!(model)
 
 # !!! info
-#     The `!` after optimize is just part of the name. It's nothing special.
+#     The `!` after optimize is part of the name. It's nothing special.
 #     Julia has a convention that functions which mutate their arguments should
 #     end in `!`. A common example is `push!`.
 
@@ -146,8 +184,10 @@ optimize!(model)
 
 termination_status(model)
 
-# In this case, the solver found an optimal solution. We should also check
-# [`primal_status`](@ref) to see if the solver found a primal feasible point:
+# In this case, the solver found an optimal solution.
+
+# Check [`primal_status`](@ref) to see if the solver found a primal feasible
+# point:
 
 primal_status(model)
 
@@ -155,33 +195,94 @@ primal_status(model)
 
 dual_status(model)
 
-# Now we know that our solver found an optimal solution, and has a primal and a
-# dual solution to query.
+# Now we know that our solver found an optimal solution, and that it has a
+# primal and a dual solution to query.
 
 # Query the objective value using [`objective_value`](@ref):
 
 objective_value(model)
 
-# The primal solution using [`value`](@ref):
+# the primal solution using [`value`](@ref):
 
 value(x)
-
-#-
-
 value(y)
 
 # and the dual solution using [`shadow_price`](@ref):
 
 shadow_price(c1)
-
-#-
-
 shadow_price(c2)
+
+# That's it for our simple model. In the rest of this tutorial, we expand on
+# some of the basic JuMP operations.
+
+# ## Model basics
+
+# Create a model by passing an optimizer:
+
+model = Model(HiGHS.Optimizer)
+
+# Alternatively, call [`set_optimizer`](@ref) at any point before calling
+# [`optimize!`](@ref):
+
+model = Model()
+set_optimizer(model, HiGHS.Optimizer)
+
+# For some solvers, you can also use [`direct_model`](@ref), which offers a more
+# efficient connection to the underlying solver:
+
+model = direct_model(HiGHS.Optimizer())
+
+# !!! warning
+#     Some solvers do not support [`direct_model`](@ref)!
+
+# ### Solver Options
+
+# Pass options to solvers with [`optimizer_with_attributes`](@ref):
+
+model =
+    Model(optimizer_with_attributes(HiGHS.Optimizer, "output_flag" => false))
+
+# !!! note
+#     These options are solver-specific. To find out the various options
+#     available, see the GitHub README of the individual solver packages. The
+#     link to each solver's GitHub page is in the [Supported solvers](@ref)
+#     table.
+
+# You can also pass options with [`set_attribute`](@ref):
+
+model = Model(HiGHS.Optimizer)
+set_attribute(model, "output_flag", false)
+
+# ## Solution basics
+
+# We saw above how to use [`termination_status`](@ref) and
+# [`primal_status`](@ref) to understand the solution returned by the solver.
+
+# However, only query solution attributes like [`value`](@ref) and
+# [`objective_value`](@ref) if there is an available solution. Here's a
+# recommended way to check:
+
+function solve_infeasible()
+    model = Model(HiGHS.Optimizer)
+    @variable(model, 0 <= x <= 1)
+    @variable(model, 0 <= y <= 1)
+    @constraint(model, x + y >= 3)
+    @objective(model, Max, x + 2y)
+    optimize!(model)
+    if termination_status(model) != OPTIMAL
+        @warn("The model was not solved correctly.")
+        return
+    end
+    return value(x), value(y)
+end
+
+solve_infeasible()
 
 # ## Variable basics
 
-model = Model()
+# Let's create a new empty model to explain some of the variable syntax:
 
+model = Model()
 
 # ### Variable bounds
 
@@ -200,117 +301,131 @@ model = Model()
 # `lower_bound` and `upper_bound` functions.
 
 has_upper_bound(keyword_x)
-
-#-
-
 upper_bound(keyword_x)
 
 # Note querying the value of a bound that does not exist will result in an error.
 
-lower_bound(free_x)
-
-# JuMP also allows us to change the bounds on variable. We will learn this in
-# the problem modification tutorial.
+try                         #hide
+    lower_bound(free_x)
+catch err                   #hide
+    showerror(stderr, err)  #hide
+end                         #hide
 
 # ### [Containers](@id tutorial_variable_container)
 
 # We have already seen how to add a single variable to a model using the
-# [`@variable`](@ref) macro. Let's now look at more ways to add variables to a
-# JuMP model.
+# [`@variable`](@ref) macro. Now let's look at ways to add multiple variables to
+# a model.
 
 # JuMP provides data structures for adding collections of variables to a model.
-# These data structures are referred to as Containers and are of three types:
+# These data structures are referred to as _containers_ and are of three types:
 # `Arrays`, `DenseAxisArrays`, and `SparseAxisArrays`.
 
 # #### Arrays
 
-# JuMP arrays are created in a similar syntax to Julia arrays with the addition
-# of specifying that the indices start with 1. If we do not tell JuMP that the
-# indices start at 1, it will create a `DenseAxisArray` instead.
+# JuMP arrays are created when you have integer indices that start at `1`:
 
 @variable(model, a[1:2, 1:2])
 
-# An n-dimensional variable $x \in {R}^n$ having a bound $l \preceq x \preceq u$
-# ($l, u \in {R}^n$) is added in the following manner.
+# Index elements in `a` as follows:
+
+a[1, 1]
+
+#-
+
+a[2, :]
+
+# Create an n-dimensional variable $x \in {R}^n$ with bounds $l \le x \le u$
+# ($l, u \in {R}^n$) as follows:
 
 n = 10
-l = [1; 2; 3; 4; 5; 6; 7; 8; 9; 10]
-u = [10; 11; 12; 13; 14; 15; 16; 17; 18; 19]
+l = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+u = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
 
 @variable(model, l[i] <= x[i = 1:n] <= u[i])
 
-# Note that while working with Containers, we can also create variable bounds
-# depending upon the indices:
+# We can also create variable bounds that depend upon the indices:
 
 @variable(model, y[i = 1:2, j = 1:2] >= 2i + j)
 
 # #### DenseAxisArrays
 
-# `DenseAxisArrays` are used when the required indices are not one-based integer
-# ranges. The syntax is similar except with an arbitrary vector as an index as
-# opposed to a one-based range.
-
-# An example where the indices are integers but do not start with one.
+# `DenseAxisArrays` are used when the indices are not one-based integer ranges.
+# The syntax is similar except with an arbitrary vector as an index as opposed
+# to a one-based range:
 
 @variable(model, z[i = 2:3, j = 1:2:3] >= 0)
 
-# Another example where the indices are an arbitrary vector.
+# Indices do not have to be integers. They can be any Julia type:
 
 @variable(model, w[1:5, ["red", "blue"]] <= 1)
 
+# Index elements in a `DenseAxisArray` as follows:
+
+z[2, 1]
+
+#-
+
+w[2:3, ["red", "blue"]]
+
+# See [Forcing the container type](@ref variable_forcing) for more details.
+
 # #### SparseAxisArrays
 
-# `SparseAxisArrays` are created when the indices do not form a rectangular set.
+# `SparseAxisArrays` are created when the indices do not form a Cartesian product.
 # For example, this applies when indices have a dependence upon previous indices
-# (called triangular indexing).
+# (called triangular indexing):
 
-@variable(model, u[i = 1:3, j = i:5])
+@variable(model, u[i = 1:2, j = i:3])
 
 # We can also conditionally create variables by adding a comparison check that
 # depends upon the named indices and is separated from the indices by a
-# semi-colon (;).
+# semi-colon `;`:
 
 @variable(model, v[i = 1:9; mod(i, 3) == 0])
 
-# ### Variable types
+# Index elements in a `DenseAxisArray` as follows:
 
-# The last argument to the `@variable` macro is usually the variable type. Here
-# we'll look at how to specify the variable type.
+u[1, 2]
+
+#-
+
+v[[3, 6]]
+
+# ### Integrality
+
+# JuMP can create binary and integer variables. Binary variables are constrained
+# to the set  ``\{0, 1\}``, and integer variables are constrained to the set
+# ``\mathbb{Z}``.
 
 # #### Integer variables
 
-# Integer optimization variables are constrained to the set $x \in {Z}$
+# Create an integer variable by passing  `Int`:
 
 @variable(model, integer_x, Int)
 
-# or
+# or setting the `integer` keyword to `true`:
 
 @variable(model, integer_z, integer = true)
 
 # #### Binary variables
 
-# Binary optimization variables are constrained to the set $x \in \{0, 1\}$.
+# Create a binary variable by passing `Bin`:
 
 @variable(model, binary_x, Bin)
 
-# or
+# or setting the `binary` keyword to `true`:
 
 @variable(model, binary_z, binary = true)
 
 # ## Constraint basics
 
+# We'll need a new model to explain some of the constraint  basics:
+
 model = Model()
 @variable(model, x)
 @variable(model, y)
 @variable(model, z[1:10]);
-
-# ### Constraint references
-
-# While calling the `@constraint` macro, we can also set up a constraint
-# reference. Such a reference is useful for obtaining additional information
-# about the constraint, such as its dual solution.
-
-@constraint(model, con, x <= 4)
 
 # ### [Containers](@id tutorial_constraint_container)
 
@@ -320,98 +435,75 @@ model = Model()
 
 # #### Arrays
 
+# Create an `Array` of constraints:
+
 @constraint(model, [i = 1:3], i * x <= i + 1)
 
 # #### DenseAxisArrays
+
+# Create an `DenseAxisArray` of constraints:
 
 @constraint(model, [i = 1:2, j = 2:3], i * x <= j + 1)
 
 # #### SparseAxisArrays
 
+# Create an `SparseAxisArray` of constraints:
+
 @constraint(model, [i = 1:2, j = 1:2; i != j], i * x <= j + 1)
 
 # ### Constraints in a loop
 
-# We can add constraints using regular Julia loops
+# We can add constraints using regular Julia loops:
 
 for i in 1:3
     @constraint(model, 6x + 4y >= 5i)
 end
 
-# or use for each loops inside the `@constraint` macro.
+# or use for each loops inside the `@constraint` macro:
 
 @constraint(model, [i in 1:3], 6x + 4y >= 5i)
 
-# We can also create constraints such as $\sum _{i = 1}^{10} z_i \leq 1$
+# We can also create constraints such as $\sum _{i = 1}^{10} z_i \leq 1$:
 
 @constraint(model, sum(z[i] for i in 1:10) <= 1)
 
 # ## Objective functions
 
-# While the recommended way to set the objective is with the [`@objective`](@ref)
-# macro, the functions [`set_objective_sense`](@ref) and [`set_objective_function`](@ref)
-# provide an equivalent lower-level interface.
+# Set an objective function with [`@objective`](@ref):
 
-using GLPK
-
-model = Model(GLPK.Optimizer)
+model = Model(HiGHS.Optimizer)
 @variable(model, x >= 0)
 @variable(model, y >= 0)
-set_objective_sense(model, MOI.MIN_SENSE)
-set_objective_function(model, x + y)
+@objective(model, Min, 2x + y)
 
-optimize!(model)
+# Create a maximization objective using `Max`:
 
-#-
+@objective(model, Max, 2x + y)
 
-objective_value(model)
-
-# To query the objective function from a model, we use the [`objective_sense`](@ref),
-# [`objective_function`](@ref), and [`objective_function_type`](@ref) functions.
-
-objective_sense(model)
-
-#-
-
-objective_function(model)
-
-#-
-
-objective_function_type(model)
+# !!! tip
+#     Calling [`@objective`](@ref) multiple times will over-write the previous
+#     objective. This can be useful when you want to solve the same problem with
+#     different objectives.
 
 # ## Vectorized syntax
 
 # We can also add constraints and an objective to JuMP using vectorized linear
-# algebra. We'll illustrate this by solving an LP in standard form i.e.
+# algebra. We'll illustrate this by solving an LP in standard form that is,
 
 # ```math
 # \begin{aligned}
 # & \min & c^T x \\
 # & \;\;\text{s.t.} & A x = b \\
-# & & x \succeq 0 \\
-# & & x \in \mathbb{R}^n
+# & & x \ge 0
 # \end{aligned}
 # ```
 
-vector_model = Model(GLPK.Optimizer)
-
-A = [
-    1 1 9 5
-    3 5 0 8
-    2 0 6 13
-]
-
-b = [7; 3; 5]
-
-c = [1; 3; 5; 2]
-
+vector_model = Model(HiGHS.Optimizer)
+A = [1 1 9 5; 3 5 0 8; 2 0 6 13]
+b = [7, 3, 5]
+c = [1, 3, 5, 2]
 @variable(vector_model, x[1:4] >= 0)
 @constraint(vector_model, A * x .== b)
 @objective(vector_model, Min, c' * x)
-
 optimize!(vector_model)
-
-#-
-
 objective_value(vector_model)
-
