@@ -7,8 +7,7 @@ import JSON
 
 #-
 
-function endpoint_api_solve(request::HTTP.Request)
-    data = JSON.parse(String(request.body))
+function solve_sudoku(data::Vector)
     model = Model(HiGHS.Optimizer)
     set_silent(model)
     @variable(model, x[i = 1:9, j = 1:9, k = 1:9], Bin)
@@ -24,22 +23,40 @@ function endpoint_api_solve(request::HTTP.Request)
         fix(x[i, j, k], 1.0)
     end
     optimize!(model)
-    if termination_status(model) != OPTIMAL
-        return Dict("status" => "failure")
+    ret = Dict{String,Any}()
+    if termination_status(model) == OPTIMAL
+        ret["status"] = "success"
+        ret["solution"] = [
+            round(Int, sum(k * value(x[i, j, k]) for k in 1:9))
+            for i in 1:9
+            for j in 1:9
+        ]
+    else
+        ret["status"] = "failure"
     end
-    ret = Dict{String,Any}("status" => "success")
-    ret["solution"] = [
-        round(Int, sum(k * value(x[i, j, k]) for k in 1:9))
-        for i in 1:9
-        for j in 1:9
-    ]
+    return ret
+end
+
+#-
+
+solve_sudoku([ (1, 1, 1), (2, 2, 3), (9, 5, 4)])
+
+#-
+
+solve_sudoku([ (1, 1, 1), (1, 2, 1)])
+
+#-
+
+function endpoint_api_solve(request::HTTP.Request)
+    data = JSON.parse(String(request.body))
+    ret = solve_sudoku(data)
     return HTTP.Response(200, JSON.json(ret))
 end
 
 #-
 
 function endpoint_index(request::HTTP.Request)
-    page = read(joinpath(@__DIR__, "sudoku.html"), String)
+    page = read(joinpath(@__DIR__, "src", "sudoku.html"), String)
     return HTTP.Response(200, page)
 end
 
@@ -57,3 +74,7 @@ end
 #-
 
 server = run_server(HTTP.ip"127.0.0.1", 8080)
+
+#-
+
+close(server)

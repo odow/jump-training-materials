@@ -140,6 +140,7 @@ function clear_input() {
 }
 
 function get_input() {
+    document.getElementById('status').textContent = "solving...";
     ret = [];
     map_cells(function (i, j, x) {
         if (x.value != "") {
@@ -158,8 +159,7 @@ function update_input(data) {
     map_cells(function (i, j, x) {
         if (x.value == "") {
             x.value = data["solution"][k];
-        } else {
-            x.style = 'color:#f00;'
+            x.style = 'color:#888;'
         }
         k += 1;
     })
