@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<head>
+    <title>Sudoku</title>
+    <style>
+        body {font-family:sans-serif;}
+        .sudoku {border:4px solid black; border-collapse: collapse;}
+        .sudoku tr {padding:0;}
+        .sudoku td {padding:0; border:1px solid black; width:1em;}
+        .sudoku input {width:1em; border:0; font-size:25pt; text-align:center;}
+        .sudoku .thick_right {border-right:4px solid black;}
+        .sudoku .thick_bottom {border-bottom:4px solid black;}
+    </style>
+</head>
+<body>    
+<table class="sudoku">
+    <tbody>
+    <tr class="thick_bottom">
+        <td colspan="3" class="thick_right"><button onclick="submit()">Submit</button></td>
+        <td colspan="3" class="thick_right"><button onclick="clear_input()">Clear</button></td>
+        <td colspan="3" id="status"></td>
+    </tr>
+    <tr>
+        <td><input id="x11" type="text" maxlength="1"/></td>
+        <td><input id="x12" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x13" type="text" maxlength="1"/></td>
+        <td><input id="x14" type="text" maxlength="1"/></td>
+        <td><input id="x15" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x16" type="text" maxlength="1"/></td>
+        <td><input id="x17" type="text" maxlength="1"/></td>
+        <td><input id="x18" type="text" maxlength="1"/></td>
+        <td><input id="x19" type="text" maxlength="1"/></td>
+    </tr>
+    <tr>
+        <td><input id="x21" type="text" maxlength="1"/></td>
+        <td><input id="x22" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x23" type="text" maxlength="1"/></td>
+        <td><input id="x24" type="text" maxlength="1"/></td>
+        <td><input id="x25" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x26" type="text" maxlength="1"/></td>
+        <td><input id="x27" type="text" maxlength="1"/></td>
+        <td><input id="x28" type="text" maxlength="1"/></td>
+        <td><input id="x29" type="text" maxlength="1"/></td>
+    </tr>
+    <tr class="thick_bottom">
+        <td><input id="x31" type="text" maxlength="1"/></td>
+        <td><input id="x32" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x33" type="text" maxlength="1"/></td>
+        <td><input id="x34" type="text" maxlength="1"/></td>
+        <td><input id="x35" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x36" type="text" maxlength="1"/></td>
+        <td><input id="x37" type="text" maxlength="1"/></td>
+        <td><input id="x38" type="text" maxlength="1"/></td>
+        <td><input id="x39" type="text" maxlength="1"/></td>
+    </tr>
+    <tr>
+        <td><input id="x41" type="text" maxlength="1"/></td>
+        <td><input id="x42" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x43" type="text" maxlength="1"/></td>
+        <td><input id="x44" type="text" maxlength="1"/></td>
+        <td><input id="x45" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x46" type="text" maxlength="1"/></td>
+        <td><input id="x47" type="text" maxlength="1"/></td>
+        <td><input id="x48" type="text" maxlength="1"/></td>
+        <td><input id="x49" type="text" maxlength="1"/></td>
+    </tr>
+    <tr>
+        <td><input id="x51" type="text" maxlength="1"/></td>
+        <td><input id="x52" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x53" type="text" maxlength="1"/></td>
+        <td><input id="x54" type="text" maxlength="1"/></td>
+        <td><input id="x55" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x56" type="text" maxlength="1"/></td>
+        <td><input id="x57" type="text" maxlength="1"/></td>
+        <td><input id="x58" type="text" maxlength="1"/></td>
+        <td><input id="x59" type="text" maxlength="1"/></td>
+    </tr>
+    <tr class="thick_bottom">
+        <td><input id="x61" type="text" maxlength="1"/></td>
+        <td><input id="x62" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x63" type="text" maxlength="1"/></td>
+        <td><input id="x64" type="text" maxlength="1"/></td>
+        <td><input id="x65" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x66" type="text" maxlength="1"/></td>
+        <td><input id="x67" type="text" maxlength="1"/></td>
+        <td><input id="x68" type="text" maxlength="1"/></td>
+        <td><input id="x69" type="text" maxlength="1"/></td>
+    </tr>
+    <tr>
+        <td><input id="x71" type="text" maxlength="1"/></td>
+        <td><input id="x72" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x73" type="text" maxlength="1"/></td>
+        <td><input id="x74" type="text" maxlength="1"/></td>
+        <td><input id="x75" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x76" type="text" maxlength="1"/></td>
+        <td><input id="x77" type="text" maxlength="1"/></td>
+        <td><input id="x78" type="text" maxlength="1"/></td>
+        <td><input id="x79" type="text" maxlength="1"/></td>
+    </tr>
+    <tr>
+        <td><input id="x81" type="text" maxlength="1"/></td>
+        <td><input id="x82" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x83" type="text" maxlength="1"/></td>
+        <td><input id="x84" type="text" maxlength="1"/></td>
+        <td><input id="x85" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x86" type="text" maxlength="1"/></td>
+        <td><input id="x87" type="text" maxlength="1"/></td>
+        <td><input id="x88" type="text" maxlength="1"/></td>
+        <td><input id="x89" type="text" maxlength="1"/></td>
+    </tr>
+    <tr>
+        <td><input id="x91" type="text" maxlength="1"/></td>
+        <td><input id="x92" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x93" type="text" maxlength="1"/></td>
+        <td><input id="x94" type="text" maxlength="1"/></td>
+        <td><input id="x95" type="text" maxlength="1"/></td>
+        <td class="thick_right"><input id="x96" type="text" maxlength="1"/></td>
+        <td><input id="x97" type="text" maxlength="1"/></td>
+        <td><input id="x98" type="text" maxlength="1"/></td>
+        <td><input id="x99" type="text" maxlength="1"/></td>
+    </tr>
+    </tbody>
+</table>
+</body>
+<script>
+function map_cells(f) {
+    for (var i = 1; i <= 9; i++) {
+        for (var j = 1; j <= 9; j++) {
+            f(i, j, document.getElementById('x' + i + j));
+        }
+    }
+    return
+}
+
+function clear_input() {
+    map_cells(function (i, j, x) {
+        x.value = "";
+        x.style = "";
+    })
+    return
+}
+
+function get_input() {
+    document.getElementById('status').textContent = "solving...";
+    ret = [];
+    map_cells(function (i, j, x) {
+        if (x.value != "") {
+            ret.push([i, j, parseInt(x.value)]);
+        }
+    })
+    return JSON.stringify(ret)
+}
+
+function update_input(data) {
+    document.getElementById('status').textContent = data["status"];
+    if (data["status"] != "success") {
+        return
+    }
+    var k = 0;
+    map_cells(function (i, j, x) {
+        if (x.value == "") {
+            x.value = data["solution"][k];
+            x.style = 'color:#888;'
+        }
+        k += 1;
+    })
+    return
+}
+
+function submit() {
+    fetch(
+        "/api/solve", 
+        {
+            method: "POST",
+            body: get_input(),
+            headers: {"Content-type": "application/json; charset=UTF-8"}
+        },
+    ).then(
+        (response) => response.json()
+    ).then(update_input);
+}
+</script>
+</html>
